@@ -70,7 +70,7 @@ client.addListener('pm',function (from, message)
         if (message.startsWith('!connect'))
         {
             const arg = message.split(' ')[1];
-
+            if(!StreamPlayerMap.has(arg)){
             const verificationCode = Math.random().toString(36).substr(2, 5);
 
             twitch_irc_client.client.join(arg).then(function () {
@@ -78,6 +78,7 @@ client.addListener('pm',function (from, message)
             });
 
             client.say(from,'Your verification code: ' + verificationCode + ' . Paste it into your twitch chat');
+        	}
         }
     } catch (e)
     {
@@ -166,6 +167,7 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
         {
             const ircMessage = user + ' -> ' + '[' + 'https://osu.ppy.sh/b/' + beatmapId + ' ' + beatmapInfo + ']' + (mods != undefined ? '+' + mods : "");
             console.log(ircMessage);
+            twitch_irc_client.say(channel,"[~Requested!~]\n  "+beatmapInfo)
             if (player)
                 client.say(player, ircMessage);
         };
