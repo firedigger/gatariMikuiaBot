@@ -171,7 +171,7 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
 
         const mapInfoCallback = function(beatmapInfo)
         {
-            const ircMessage = user + ' -> ' + '[' + 'https://osu.ppy.sh/' + res[2] +  '/' + beatmapId + ' ' + beatmapInfo + ']' + (mods != undefined ? '+' + mods : "");
+            const ircMessage = user + ' -> ' + '[' + 'https://osu.ppy.sh/' + res2[2] +  '/' + beatmapId + ' ' + beatmapInfo + ']' + (mods != undefined ? '+' + mods : "");
             console.log(ircMessage);
             twitch_irc_client.say(channel,"[~Requested!~]\n  "+beatmapInfo)
             if (player)
