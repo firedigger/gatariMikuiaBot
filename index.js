@@ -91,8 +91,6 @@ client.addListener('error',function (error) {
 
 client.connect(1);
 
-//const player = 'xxdstem';
-
 function getMapInfoFromApi(beatmap_id,callback)
 {
     osuApi.getBeatmap(beatmap_id,function (error, metadata) {
@@ -105,6 +103,10 @@ function getMapInfoFromApi(beatmap_id,callback)
             const mapInfo = metadata.artist + ' - ' + metadata.title + '[' + metadata.version + ']';
             callback(mapInfo);
         }
+		else
+		{
+			console.log('Error retrieving beatmap data ' + beatmap_id);
+		}
     });
 }
 
@@ -120,6 +122,10 @@ function getMapSetInfoFromApi(beatmapset_id,callback)
             const mapInfo = metadata.artist + ' - ' + metadata.title;
             callback(mapInfo);
         }
+		else
+		{
+			console.log('Error retrieving beatmap data ' + beatmapset_id);
+		}
     });
 }
 
@@ -165,9 +171,15 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
         const mapInfoCallback = function(beatmapInfo)
         {
             const ircMessage = user + ' -> ' + '[' + 'https://osu.ppy.sh/b/' + beatmapId + ' ' + beatmapInfo + ']' + '+' + mods;
-            console.log(ircMessage);
             if (player)
+			{
+				console.log('Attempting to send message to ' + player + ' ' + ircMessage);
                 client.say(player, ircMessage);
+			}
+			else
+			{
+				console.log('Channel ' + channel + ' didnt find user');
+			}
         };
 
         if (res2[2] == 'b')
