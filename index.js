@@ -17,6 +17,105 @@ if (fs.existsSync(StreamPlayerMap_filename))
     StreamPlayerMap.load_from_file(StreamPlayerMap_filename);
 }
 
+const PlayerStatsMap = new SerializableMap();
+const PlayerStatsMap_filename = 'playerstats.json';
+if (fs.existsSync(PlayerStatsMap_filename))
+{
+    PlayerStatsMap.load_from_file(PlayerStatsMap_filename);
+}
+
+const pp_threshold = 8;
+const limit = 50;
+
+const server = 'http://osu.gatari.pw';
+
+function updatePlayerStats(value, key)
+{
+    const URL = server + '/api/v1/users/stats?u=' + key;
+    request.get(URL,function (error, headers, data)
+    {
+        data = JSON.parse(data);
+
+        if (!error && data && data.code === 200)
+        {
+            const stats = {pp:data.stats.pp, rank:data.stats.rank};
+
+            if (!PlayerStatsMap.has(key))
+            {
+                PlayerStatsMap.add(key,stats);
+            }
+            else
+            {
+                const prevStats = PlayerStatsMap.get(key);
+                const rankDelta = prevStats.rank - stats.rank;
+                if (stats.pp - prevStats.pp >= pp_threshold)
+                {
+                    const URL2 = server + '/api/v1/users/privileges?u=' + key;
+                    request.get(URL2,function (error, headers, data)
+                    {
+                        data = JSON.parse(data);
+
+                        if (!error && data && data.code == 200)
+                        {
+                            if ((data.info.privileges & Math.pow(2,7)) > 0)
+                            {
+                                const userid = data.info.userid;
+
+                                console.log('Druzhban privileges confirmed!');
+
+                                const URL3 = server + '/api/v1/users/scores/best?id=' + userid + '&l='+limit+ '&p=1'+'&mode=0';
+
+                                request.get(URL3,function (error, headers, data)
+                                {
+                                    data = JSON.parse(data);
+
+                                    if (!error && data && data.code == 200)
+                                    {
+                                        data = data.scores;
+                                        data.forEach(function (x) {
+                                            x.seconds = Math.floor((new Date() - new Date(x.time)) / 1000);
+                                        });
+
+                                        const newScoreDate = Math.min.apply(Math,data.map(function(o){return o.seconds;}));
+
+                                        const index = data.findIndex(function (elem) {
+                                            return elem.seconds == newScoreDate;
+                                        });
+
+                                        const newScore = data[index];
+
+                                        const newScoreMessage = 'New score: #' + index + ' for ' + newScore.pp + 'pp on ' + newScore.beatmap.song_name + ' ' + rankDelta + ' ranks gained!';
+                                        twitch_irc_client.say(value, newScoreMessage);
+                                    }
+                                    else
+                                        console.log('User best scores request error: ' + error);
+                                });
+                            }
+                        }
+                        else
+                            console.log('User priveleges request error: ' + error);
+                    });
+                }
+                PlayerStatsMap.add(key, stats);
+                PlayerStatsMap.save_to_file(PlayerStatsMap_filename);
+            }
+        }
+        else
+            console.log('User stats request error: ' + error);
+    });
+}
+
+function updatePlayersStats()
+{
+    StreamPlayerMap.forEach(function (value, key)
+    {
+        updatePlayerStats(value, key);
+    });
+}
+
+setInterval(updatePlayersStats,10 * 1000);
+
+
 const twitch_config = JSON.parse(fs.readFileSync('twitch_config.json'));
 //twitch_config.host = channels;
 
@@ -142,7 +241,7 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
     {
         const pair = verificationMap.get(message);
 
-        if (user == pair.channel && channel == pair.channel)
+        if (user === pair.channel && channel === pair.channel)
         {
             StreamPlayerMap.add(pair.channel,pair.player);
             StreamPlayerMap.save_to_file(StreamPlayerMap_filename);
@@ -162,7 +261,7 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
     //console.log(player);
 
     const res2 = BeatmapIdRegExp.exec(message);
-    if (res2 != null)
+    if (res2 !== null)
     {
         console.log('Got beatmap request! ' + res2[0]);
 
@@ -185,7 +284,7 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
 			}
         };
 
-        if (res2[2] == 'b')
+        if (res2[2] === 'b')
             getMapInfoFromApi(beatmapId,mapInfoCallback);
         else
             getMapSetInfoFromApi(beatmapId,mapInfoCallback);
