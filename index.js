@@ -113,7 +113,7 @@ function getMapInfoFromApi(beatmap_id,callback)
 
 function getMapSetInfoFromApi(beatmapset_id,callback)
 {
-    osuApi.getBeatmap(beatmapset_id,function (error, metadata) {
+    osuApi.getBeatmapSet(beatmapset_id,function (error, metadata) {
 
         if (Array.isArray(metadata))
             metadata = metadata[0];
