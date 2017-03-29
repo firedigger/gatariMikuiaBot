@@ -153,7 +153,7 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
         }
     }
 
-    const BeatmapIdRegExp = /https?:\/\/(osu|new)\.ppy|gatari\.sh|pw\/([bs])\/(\d+)(\+(.+))?/i;
+    const BeatmapIdRegExp = /https?:\/\/(osu|new)\.(?:gatari|ppy)\.(?:pw|sh)\/([bs])\/(\d+)(\+(.+))?/i;
 
     //console.log(message);
 
