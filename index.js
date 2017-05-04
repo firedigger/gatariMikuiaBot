@@ -24,7 +24,7 @@ if (fs.existsSync(PlayerStatsMap_filename))
     PlayerStatsMap.load_from_file(PlayerStatsMap_filename);
 }
 
-const pp_threshold = 8;
+const pp_threshold = 2;
 const limit = 50;
 
 const server = 'http://osu.gatari.pw';
@@ -173,7 +173,7 @@ client.addListener('pm',function (from, message)
             const verificationCode = Math.random().toString(36).substr(2, 5);
 
             twitch_irc_client.client.join(arg).then(function () {
-                verificationMap.set(verificationCode, {'channel':arg,'player':from});
+                verificationMap.set(verificationCode, {'channel':arg.toLowerCase(),'player':from});
             });
 
             client.say(from,'Your verification code: ' + verificationCode + ' . Paste it into your twitch chat');
@@ -281,9 +281,8 @@ twitch_irc_client.on_message(function(channel, user,message,callback,whisper_cal
     const player = StreamPlayerMap.has(channel) ? StreamPlayerMap.get(channel) : undefined;
 
     //console.log(player);
-
     const res2 = BeatmapIdRegExp.exec(message);
-    if (res2 !== null)
+    if (res2 !== null && user != channel)
     {
         console.log('Got beatmap request! ' + res2[0]);
 
