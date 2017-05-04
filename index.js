@@ -29,9 +29,9 @@ const limit = 50;
 
 const server = 'http://osu.gatari.pw';
 
-function updatePlayerStats(value, key)
+function updatePlayerStats(username, stream)
 {
-    const URL = server + '/api/v1/users/stats?u=' + key;
+    const URL = server + '/api/v1/users/stats?u=' + username;
     request.get(URL,function (error, headers, data)
     {
         data = JSON.parse(data);
@@ -40,17 +40,17 @@ function updatePlayerStats(value, key)
         {
             const stats = {pp:data.stats.pp, rank:data.stats.rank};
 
-            if (!PlayerStatsMap.has(key))
+            if (!PlayerStatsMap.has(username))
             {
-                PlayerStatsMap.add(key,stats);
+                PlayerStatsMap.add(username,stats);
             }
             else
             {
-                const prevStats = PlayerStatsMap.get(key);
+                const prevStats = PlayerStatsMap.get(username);
                 const rankDelta = prevStats.rank - stats.rank;
                 if (stats.pp - prevStats.pp >= pp_threshold)
                 {
-                    const URL2 = server + '/api/v1/users/privileges?u=' + key;
+                    const URL2 = server + '/api/v1/users/privileges?u=' + username;
                     request.get(URL2,function (error, headers, data)
                     {
                         data = JSON.parse(data);
@@ -69,7 +69,7 @@ function updatePlayerStats(value, key)
                                 {
                                     data = JSON.parse(data);
 
-                                    if (!error && data && data.code == 200)
+                                    if (!error && data && (+data.code) === 200)
                                     {
                                         data = data.scores;
                                         data.forEach(function (x) {
@@ -79,13 +79,13 @@ function updatePlayerStats(value, key)
                                         const newScoreDate = Math.min.apply(Math,data.map(function(o){return o.seconds;}));
 
                                         const index = data.findIndex(function (elem) {
-                                            return elem.seconds == newScoreDate;
+                                            return elem.seconds === newScoreDate;
                                         });
 
                                         const newScore = data[index];
 
                                         const newScoreMessage = 'New score: #' + index + ' for ' + newScore.pp + 'pp on ' + newScore.beatmap.song_name + ' ' + rankDelta + ' ranks gained!';
-                                        twitch_irc_client.say(value, newScoreMessage);
+                                        twitch_irc_client.say(stream, newScoreMessage);
                                     }
                                     else
                                         console.log('User best scores request error: ' + error);
@@ -96,7 +96,7 @@ function updatePlayerStats(value, key)
                             console.log('User priveleges request error: ' + error);
                     });
                 }
-                PlayerStatsMap.add(key, stats);
+                PlayerStatsMap.add(username, stats);
                 PlayerStatsMap.save_to_file(PlayerStatsMap_filename);
             }
         }
@@ -179,6 +179,28 @@ client.addListener('pm',function (from, message)
             client.say(from,'Your verification code: ' + verificationCode + ' . Paste it into your twitch chat');
         	}
         }
+
+        if (message.startsWith('!disconnect'))
+        {
+            const keys = [];
+
+            StreamPlayerMap.forEach(
+                function(value, key)
+                {
+                    if (value === from)
+                    {
+                        keys.push(key);
+                    }
+                });
+
+            keys.forEach(function (v)
+            {
+                StreamPlayerMap.delete(v);
+            })
+
+            client.say(from,'Disconnected');
+        }
+
     } catch (e)
     {
         console.log(e);
